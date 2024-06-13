@@ -7,7 +7,7 @@ static uint32_t output_pot = 0;
 // Variable to store the slope used for normalization of pot ADC value
 static double slope = 1.0 * 100/4095;
 
-// Funtion used to round value obtained from normalizaton of pot ADC value
+// Function used to round value obtained from normalizaton of pot ADC value
 static uint32_t roundFunction(double d){
     return floor(d + 0.5);
 }
@@ -15,7 +15,7 @@ static uint32_t roundFunction(double d){
 //Variable to store value from ADC reading
 static uint16_t ADC_VAL = 0;
 
-/* Funtion used to configure System clock, in this case we're using external crystal in
+/* Function used to configure System clock, in this case we're using external crystal in
  ST-Link debugger connected to Nucleo Board STM32F401RE using Phase Locked Loop (PLL) */
 static void SysClockConfig (void){
 	
@@ -247,7 +247,7 @@ static void ADC_Start (void){
 }
 
 
-// Functio to wait for ADC conversion
+// Function to wait for ADC conversion
 static void ADC_WaitForConv (void){
 	
 	//Wait for EOC end of conversion flag to be set
