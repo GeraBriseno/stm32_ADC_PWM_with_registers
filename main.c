@@ -4,10 +4,10 @@
 // Variable to store output of potentiometer after being normalized to 0-100
 static uint32_t output_pot = 0;
 
-// Variable to store the slope used for normalization of pot ADC value
+// Variable to store the slope used for normalization of potentiometer ADC value
 static double slope = 1.0 * 100/4095;
 
-// Function used to round value obtained from normalizaton of pot ADC value
+// Function used to round value obtained from normalization of potentiometer ADC value
 static uint32_t roundFunction(double d){
     return floor(d + 0.5);
 }
@@ -15,34 +15,34 @@ static uint32_t roundFunction(double d){
 //Variable to store value from ADC reading
 static uint16_t ADC_VAL = 0;
 
-/* Function used to configure System clock, in this case we're using external crystal in
+/* Function used to configure System Clock, in this case we're using the external crystal oscillator in
  ST-Link debugger connected to Nucleo Board STM32F401RE using Phase Locked Loop (PLL) */
 static void SysClockConfig (void){
 	
-	/* Frequency of crystal oscilator is 8MHz, to calculate frequency obtained with PLL, we use the formula:
+	/* Frequency of crystal oscillator is 8MHz, to calculate frequency obtained with PLL, we use the formula:
 	 ((inputfreq/PLL_M)*PLL_N)/PLL_P  in this case ((80/4)*80)/2 */
 	
-	/* Values to write to reset and clock control pll configuration register (RCC->PLLCFGR) to get desired values
-	 (this values have been obtained using STM32CubeIDE) */
+	/* Values to write to reset and clock control pll configuration register (RCC->PLLCFGR) to get desired clock values
+	 (these values have been obtained using STM32CubeIDE) */
 	#define PLL_M 	4
 	#define PLL_N 	80
 	#define PLL_P 	0  // PLLP = 2
 
-	// 1. Enable HSE (high speed external cloak source) and wait for the HSE to become Ready
-	RCC->CR |= RCC_CR_HSEON;  // RCC->CR |= 1<<16; 
+	// 1. Enable HSE (high speed external clock source) and wait for the HSE to become ready
+	RCC->CR |= RCC_CR_HSEON;  // RCC->CR |= 1<<16;
 	while (!(RCC->CR & RCC_CR_HSERDY));  // while (!(RCC->CR & (1<<17)));
 	
 	// 2. Enable power interface clock
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;  // RCC->APB1ENR |= 1<<28;
-	// Set VOS in PWR register as reserved (scale 2 mode selected) to allow a maximum freq of 84 MHz
+	// Set VOS (voltage output scaling) in PWR register as reserved (scale 2 mode selected) to allow a maximum freq of 84 MHz
 	PWR->CR |= PWR_CR_VOS;  // PWR->CR |= 3<<14; 
 	
-	/* 3. Configure the Flash Prefetch and the Latency Related Settings
-	 (this values have been obtained using STM32CubeIDE) */
+	/* 3. Configure the flash prefetch and the latency related settings
+	 (these values have been obtained using STM32CubeIDE) */
 	FLASH->ACR = FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_PRFTEN | FLASH_ACR_LATENCY_2WS;  // FLASH->ACR = (1<<8) | (1<<9)| (1<<10)| (5<<0);
 	
 	/* 4. Configure the prescalers to get final values for HCLK, PCLK1, PCLK2
-	 (this values have been obtained using STM32CubeIDE) */
+	 (these values have been obtained using STM32CubeIDE) */
 	
 	// AHB prescaler = 1
 	RCC->CFGR |= RCC_CFGR_HPRE_DIV1;  // RCC->CFGR |= (0<<4);
@@ -60,7 +60,7 @@ static void SysClockConfig (void){
 	RCC->CR |= RCC_CR_PLLON;  // RCC->CR |= (1<<24);
 	while (!(RCC->CR & RCC_CR_PLLRDY));  // while (!(RCC->CR & (1<<25)));
 	
-	// 7. Select the Clock Source and wait for it to be set
+	// 7. Select the Clock Source as PLL and wait for it to be set
 	RCC->CFGR |= RCC_CFGR_SW_PLL;  // RCC->CFGR |= (2<<0);
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);  // while (!(RCC->CFGR & (2<<2)));
 	
@@ -199,16 +199,16 @@ static void ADC_Init(){
 	//2. Set the prescaler in the ADC Common Control Register
 	ADC->CCR |= 1<<16;  		 // PCLK2 divided by 4 (80/4)
 		
-	//3. Set the Scan Mode and Resolution in the Control Register 1
+	//3. Set the scan mode and resolution in the Control Register 1
 	ADC1->CR1 = (1<<8);    // SCAN mode enabled
 	ADC1->CR1 |= (0<<24);   // 12 bit resolution
 		
-	//4. Set the continuous conversion, EOC, and data alignment in control register 2 (CR2)
+	//4. Set the continuous conversion, EOC (end of conversion), and data alignment in Control Register 2 (CR2)
 	ADC1->CR2 |= (1<<1);     // Enable continuous conversion mode
 	ADC1->CR2 |= (1<<10);    // EOCS after each conversion
 	ADC1->CR2 |= (0<<11);   // Data alignment right
 		
-	//5. Set the Sampling Time for the channels	
+	//5. Set the sampling time for the channels	
 	ADC1->SMPR2 |= (0<<12);  // Sampling time of 3 cycles for channel 4
 
 	//6. Set the Regular channel sequence length in ADC_SQR1
@@ -250,7 +250,7 @@ static void ADC_Start (void){
 // Function to wait for ADC conversion
 static void ADC_WaitForConv (void){
 	
-	//Wait for EOC end of conversion flag to be set
+	//Wait for EOC (end of conversion) flag to be set
 	while (!(ADC1->SR & (1<<1)));
 	
 }
@@ -285,7 +285,7 @@ int main (void){
 		//Normalize ADC input to a 0-100 scale
 		output_pot = roundFunction(slope * ADC_VAL);
 		
-		//We're using the value read from ADC to modify the duty of our PWM outputs, and change the brightness of 3 LEDs
+		//We're using the value read from ADC to modify the duty of our PWM outputs and change the brightness of 3 LEDs
 		
 		if(output_pot < 33){
 			//Set duty of PWM to the normalized value of the ADC reading
